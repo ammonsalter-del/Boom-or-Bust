@@ -6,7 +6,7 @@ A browser-based educational game that challenges players to predict which expert
 
 Every innovation in this exercise won a *Popular Science* "Best of What's New" award between 2010–2019. Despite expert endorsement, some became transformative successes while others failed. Players have 30 seconds per case to predict the outcome.
 
-**Play now:** Open `boom-or-bust-professional.html` in any modern browser. No installation required.
+**Play now:** https://ammonsalter-del.github.io/Boom-or-Bust/ or Open `boom-or-bust-professional.html` in any modern browser. No installation required.
 
 ## Features
 
