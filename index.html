@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<!--
+  Boom or Bust? Innovation Prediction Exercise
+  ============================================
+  © 2026 Ammon Salter, Warwick Business School
+  
+  Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 
+  International License (CC BY-NC-SA 4.0).
+  
+  You are free to:
+    - Share: copy and redistribute the material in any medium or format
+    - Adapt: remix, transform, and build upon the material
+  
+  Under the following terms:
+    - Attribution: You must give appropriate credit to Ammon Salter
+    - NonCommercial: You may not use the material for commercial purposes
+    - ShareAlike: If you remix or transform, you must distribute under the same license
+  
+  Full license: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  
+  Contributors: Claude (Anthropic)
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boom or Bust? - Innovation Prediction Exercise</title>
+    <meta name="description" content="An educational game challenging you to predict which expert-endorsed innovations became commercial successes or failures.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=Source+Serif+Pro:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Warwick Brand Colors */
+            --aubergine: #3C1053;
+            --aubergine-light: #5a2d6e;
+            --aubergine-pale: #f5f0f7;
+            --gold: #F1BE48;
+            --gold-dark: #D69A2D;
+            --gold-pale: #fdf8ed;
+            
+            /* Professional success/failure colors - more muted */
+            --success: #1e6f5c;
+            --success-light: #e8f4f0;
+            --failure: #9c3d3d;
+            --failure-light: #faf0f0;
+            
+            /* Neutrals */
+            --bg: #fafafa;
+            --card-bg: #ffffff;
+            --text: #2d2d2d;
+            --text-muted: #666666;
+            --border: #e5e5e5;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        /* Subtle screen shake */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25%, 75% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        /* Milestone display */
+        .milestone-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--aubergine);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            opacity: 0;
+            z-index: 500;
+            pointer-events: none;
+            text-align: center;
+        }
+        .milestone-display .sub { font-size: 0.9rem; font-weight: 400; color: var(--text-muted); margin-top: 4px; }
+        @keyframes milestone-pop {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            85% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+        }
+        .milestone-display.show { animation: milestone-pop 2s ease-out forwards; }
+
+        /* Streak display - more subtle */
+        .streak-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold-dark);
+            opacity: 0;
+            z-index: 500;
+            pointer-events: none;
+        }
+        @keyframes streak-pop {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+        .streak-display.show { animation: streak-pop 1s ease-out forwards; }
+
+        .sound-toggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background: white;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: all 0.2s;
+        }
+        .sound-toggle:hover { background: var(--aubergine-pale); }
+        .sound-toggle.muted { opacity: 0.5; }
+
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px 0 15px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 2.4rem;
+            color: var(--aubergine);
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        header .subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* INTRO SCREEN */
+        .intro-content {
+            text-align: center;
+        }
+
+        .intro-content > p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            max-width: 580px;
+            margin-left: auto;
+            margin-right: auto;
+            color: var(--text);
+        }
+
+        .intro-hero {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .hero-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 30px;
+            border-radius: 8px;
+            background: white;
+            border: 1px solid var(--border);
+        }
+
+        .hero-icon .icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .hero-icon .label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-icon.boom { border-left: 4px solid var(--success); }
+        .hero-icon.boom .icon { color: var(--success); }
+        .hero-icon.boom .label { color: var(--success); }
+        .hero-icon.bust { border-left: 4px solid var(--failure); }
+        .hero-icon.bust .icon { color: var(--failure); }
+        .hero-icon.bust .label { color: var(--failure); }
+        .hero-icon.question { border-left: 4px solid var(--gold); background: var(--gold-pale); }
+        .hero-icon.question .label { color: var(--gold-dark); }
+
+        .intro-rules {
+            background: white;
+            border-radius: 8px;
+            padding: 25px 30px;
+            margin: 25px auto;
+            max-width: 520px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        .intro-rules h3 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1.1rem;
+            color: var(--aubergine);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .intro-rules ul {
+            list-style: none;
+        }
+
+        .intro-rules li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .intro-rules li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--gold-dark);
+            font-weight: 700;
+        }
+
+        .time-badge {
+            display: inline-block;
+            background: var(--aubergine-pale);
+            color: var(--aubergine);
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .start-section {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            font-family: 'Source Sans Pro', sans-serif;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background: var(--aubergine);
+            color: white;
+            padding: 16px 48px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(60, 16, 83, 0.2);
+        }
+
+        .btn-start:hover {
+            background: var(--aubergine-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(60, 16, 83, 0.25);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--aubergine);
+            padding: 10px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid var(--aubergine);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--aubergine);
+            color: white;
+        }
+        
+        .intro-buttons-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .credits-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .credits-footer a { color: var(--aubergine); }
+        .credits-footer .credits-sub { margin-top: 5px; font-size: 0.8rem; opacity: 0.8; }
+        .credits-footer .institution { font-weight: 600; color: var(--text); }
+
+        /* GAME SCREEN */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .stat-value.points { color: var(--gold-dark); }
+        .stat-value.streak { color: var(--aubergine); }
+        .stat-value.correct { color: var(--success); }
+        .stat-value.wrong { color: var(--failure); }
+        .stat-value.neutral { color: var(--text); }
+
+        .progress-container {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--aubergine);
+            transition: width 0.5s ease;
+        }
+
+        .timer-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .timer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .timer-icon { font-size: 1rem; color: var(--text-muted); }
+
+        .timer-bar-container {
+            width: 100px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: var(--success);
+            transition: width 0.1s linear;
+        }
+        .timer-bar.warning { background: var(--gold-dark); }
+        .timer-bar.danger { background: var(--failure); }
+
+        .timer-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            min-width: 36px;
+            color: var(--text);
+        }
+        .timer-text.warning { color: var(--gold-dark); }
+        .timer-text.danger { color: var(--failure); }
+
+        .speed-bonus {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .card-wrapper {
+            perspective: 1000px;
+            height: 340px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-front {
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        .card-back {
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transform: rotateY(180deg);
+            overflow-y: auto;
+        }
+
+        .card-back.boom-result { border-left: 4px solid var(--success); }
+        .card-back.bust-result { border-left: 4px solid var(--failure); }
+
+        .year-badge {
+            display: inline-block;
+            background: var(--aubergine);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            align-self: flex-start;
+        }
+
+        .innovation-name {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--aubergine);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .innovation-desc {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text);
+            flex-grow: 1;
+        }
+
+        .expert-quote {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 12px 16px;
+            background: var(--aubergine-pale);
+            border-left: 3px solid var(--gold);
+            border-radius: 0 4px 4px 0;
+            margin-top: auto;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .result-icon { font-size: 1.8rem; }
+
+        .result-label {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .result-label.boom { color: var(--success); }
+        .result-label.bust { color: var(--failure); }
+
+        .company-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--aubergine);
+            margin-bottom: 10px;
+        }
+
+        .result-explanation {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .success-reason, .failure-reason {
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        .success-reason { background: var(--success-light); border-left: 3px solid var(--success); }
+        .failure-reason { background: var(--failure-light); border-left: 3px solid var(--failure); }
+
+        .lesson-box {
+            background: var(--gold-pale);
+            border-left: 3px solid var(--gold);
+            border-radius: 0 4px 4px 0;
+            padding: 12px 14px;
+            margin-top: 12px;
+        }
+        .lesson-box strong {
+            color: var(--aubergine);
+            font-size: 0.85rem;
+        }
+        .lesson-box p {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .points-earned {
+            text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+        .points-earned.correct { background: var(--success-light); }
+        .points-earned.wrong { background: var(--failure-light); }
+        .points-earned.timeout { background: var(--gold-pale); }
+        .points-text {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .points-breakdown {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .vote-buttons-container {
+            display: flex;
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .vote-btn {
+            flex: 1;
+            padding: 18px 16px;
+            border-radius: 6px;
+            border: 2px solid;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+
+        .vote-btn .btn-icon {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .vote-btn .btn-label {
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vote-btn .btn-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .vote-btn.boom-btn {
+            border-color: var(--success);
+        }
+        .vote-btn.boom-btn .btn-icon, .vote-btn.boom-btn .btn-label { color: var(--success); }
+        .vote-btn.boom-btn:hover {
+            background: var(--success-light);
+        }
+
+        .vote-btn.bust-btn {
+            border-color: var(--failure);
+        }
+        .vote-btn.bust-btn .btn-icon, .vote-btn.bust-btn .btn-label { color: var(--failure); }
+        .vote-btn.bust-btn:hover {
+            background: var(--failure-light);
+        }
+
+        .vote-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .confidence-section {
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        .confidence-section.show { display: block; }
+        .confidence-label {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--aubergine);
+        }
+        .confidence-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .confidence-btn {
+            padding: 12px 20px;
+            border-radius: 4px;
+            border: 1px solid var(--aubergine);
+            background: white;
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .confidence-btn:hover {
+            background: var(--aubergine);
+            color: white;
+        }
+        .confidence-btn .multiplier {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+        .confidence-btn:hover .multiplier { color: rgba(255,255,255,0.8); }
+
+        .btn-next {
+            display: none;
+            margin: 20px auto;
+            background: var(--aubergine);
+            color: white;
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-next:hover {
+            background: var(--aubergine-light);
+        }
+
+        /* RESULTS SCREEN */
+        .results-content {
+            text-align: center;
+        }
+
+        .final-score {
+            background: white;
+            border-radius: 8px;
+            padding: 35px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .final-score h2 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1.6rem;
+            color: var(--aubergine);
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--aubergine);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            color: white;
+        }
+
+        .score-circle .big-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .score-circle .of-total {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .score-message {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--text);
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .final-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .final-stat {
+            background: var(--bg);
+            padding: 15px 25px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .final-stat .label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .final-stat .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .final-stat .value.gold { color: var(--gold-dark); }
+        .final-stat .value.purple { color: var(--aubergine); }
+
+        /* Achievement badges - more subtle */
+        .achievements-section { margin: 25px 0; }
+        .achievements-section h3 { 
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1rem; 
+            font-weight: 600; 
+            color: var(--aubergine); 
+            margin-bottom: 15px; 
+        }
+        .badges-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .badge { 
+            display: flex; flex-direction: column; align-items: center; 
+            background: white; padding: 12px 16px; border-radius: 6px; 
+            border: 1px solid var(--border); min-width: 100px;
+        }
+        .badge.earned { border-left: 3px solid var(--gold); }
+        .badge.locked { opacity: 0.4; }
+        .badge .badge-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .badge .badge-name { font-size: 0.8rem; font-weight: 700; color: var(--aubergine); text-align: center; }
+        .badge .badge-desc { font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+
+        .debrief {
+            background: white;
+            border-radius: 8px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+
+        .debrief h3 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1rem;
+            color: var(--aubergine);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .debrief ul {
+            list-style: none;
+        }
+
+        .debrief li {
+            position: relative;
+            padding-left: 24px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .debrief li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--gold-dark);
+            font-weight: 700;
+        }
+
+        .surprising-section, .lessons-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        .surprising-section h3, .lessons-section h3 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1rem;
+            color: var(--aubergine);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .surprise-item, .lesson-item {
+            padding: 14px 16px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--gold);
+        }
+        .surprise-item-name, .lesson-item-name {
+            font-weight: 700;
+            color: var(--aubergine);
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .surprise-item-text, .lesson-item-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .btn-restart {
+            background: var(--aubergine);
+            color: white;
+            padding: 14px 36px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Source Sans Pro', sans-serif;
+            margin-top: 25px;
+            transition: all 0.2s;
+        }
+
+        .btn-restart:hover {
+            background: var(--aubergine-light);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 18px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+        .modal-close:hover { color: var(--aubergine); }
+        .modal-content h2 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1.3rem;
+            color: var(--aubergine);
+            margin-bottom: 20px;
+            padding-right: 30px;
+            font-weight: 700;
+        }
+        .modal-content h3 {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--aubergine);
+            margin: 20px 0 12px 0;
+        }
+        .modal-content p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        .btn-modal-close {
+            display: block;
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            background: var(--aubergine);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-modal-close:hover {
+            background: var(--aubergine-light);
+        }
+
+        .popsci-links {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+        .popsci-links a {
+            display: inline-block;
+            padding: 6px 14px;
+            background: var(--aubergine-pale);
+            color: var(--aubergine);
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .popsci-links a:hover {
+            background: var(--aubergine);
+            color: white;
+        }
+
+        /* About Modal Styles */
+        .about-content {
+            max-width: 560px;
+        }
+        .about-section {
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .about-section h3 {
+            font-size: 0.9rem;
+            color: var(--aubergine);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .about-section p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .about-section p:last-child {
+            margin-bottom: 0;
+        }
+        .about-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .about-section ul li {
+            font-size: 0.85rem;
+            padding-left: 18px;
+            position: relative;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .about-section ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--gold-dark);
+            font-weight: bold;
+        }
+        .about-section.purpose {
+            border-left: 3px solid var(--aubergine);
+        }
+        .about-section.learning {
+            border-left: 3px solid var(--success);
+            background: var(--success-light);
+        }
+        .about-section.educational {
+            border-left: 3px solid var(--gold);
+            background: var(--gold-pale);
+        }
+        .about-section.research {
+            border-left: 3px solid #4a90a4;
+            background: #f0f7fa;
+        }
+        .about-section.source {
+            border-left: 3px solid var(--text-muted);
+        }
+        .about-section.open {
+            border-left: 3px solid var(--success);
+            background: var(--success-light);
+        }
+        .open-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .open-feature {
+            flex: 1;
+            min-width: 140px;
+            background: white;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .open-feature .open-icon {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        .open-feature strong {
+            display: block;
+            color: var(--aubergine);
+            margin-bottom: 2px;
+        }
+        .open-feature span:last-child {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Tutorial Modal Styles */
+        .tutorial-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--aubergine);
+        }
+        .tutorial-step-number {
+            width: 24px;
+            height: 24px;
+            background: var(--aubergine);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .tutorial-step-content {
+            flex: 1;
+        }
+        .tutorial-step-title {
+            font-weight: 700;
+            color: var(--aubergine);
+            margin-bottom: 2px;
+            font-size: 0.9rem;
+        }
+        .tutorial-step-desc {
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.4;
+        }
+        .tutorial-scoring {
+            background: var(--gold-pale);
+            border-left: 3px solid var(--gold);
+            border-radius: 0 6px 6px 0;
+            padding: 14px;
+            margin-top: 15px;
+        }
+        .tutorial-scoring h4 {
+            color: var(--aubergine);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .tutorial-scoring ul {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+        .tutorial-scoring li {
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+        .tutorial-scoring li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--gold-dark);
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            body { font-size: 15px; }
+            .container { padding: 12px; }
+            header { padding: 20px 0 12px; }
+            header h1 { font-size: 1.6rem; }
+            header .subtitle { font-size: 0.9rem; }
+            
+            .intro-hero { gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+            .hero-icon { padding: 12px 16px; min-width: 80px; }
+            .hero-icon .icon { font-size: 1.3rem; }
+            .hero-icon .label { font-size: 0.8rem; }
+            
+            .intro-rules { padding: 16px; margin: 20px auto; }
+            .intro-rules h3 { font-size: 1rem; }
+            .intro-rules li { font-size: 0.9rem; }
+            
+            .time-badge { padding: 8px 16px; font-size: 0.85rem; }
+            
+            .btn-start { padding: 14px 32px; font-size: 1rem; width: 100%; }
+            .start-section { gap: 12px; }
+            .intro-buttons-row { width: 100%; }
+            .btn-secondary { flex: 1; padding: 12px 16px; font-size: 0.85rem; }
+            
+            .stats-bar { padding: 8px 12px; gap: 4px; }
+            .stat-item { min-width: 50px; }
+            .stat-label { font-size: 0.65rem; }
+            .stat-value { font-size: 1.1rem; }
+            
+            .timer { padding: 8px 12px; gap: 8px; }
+            .timer-bar-container { width: 80px; }
+            .timer-text { font-size: 1rem; min-width: 30px; }
+            
+            .card-wrapper { height: 320px; margin-bottom: 15px; }
+            .card-face { padding: 16px 18px; }
+            .year-badge { padding: 4px 10px; font-size: 0.8rem; margin-bottom: 10px; }
+            .innovation-name { font-size: 1.05rem; margin-bottom: 10px; }
+            .innovation-desc { font-size: 0.85rem; line-height: 1.5; }
+            .expert-quote { font-size: 0.8rem; padding: 10px 12px; }
+            
+            .result-header { gap: 10px; margin-bottom: 10px; }
+            .result-icon { font-size: 1.5rem; }
+            .result-label { font-size: 1.2rem; }
+            .company-name { font-size: 0.9rem; }
+            .result-explanation { font-size: 0.8rem; }
+            .success-reason, .failure-reason { font-size: 0.8rem; padding: 8px 12px; }
+            .lesson-box { padding: 10px 12px; }
+            .lesson-box strong, .lesson-box p { font-size: 0.8rem; }
+            
+            .vote-buttons-container { gap: 10px; padding: 0; }
+            .vote-btn { padding: 16px 12px; min-height: 70px; }
+            .vote-btn .btn-icon { font-size: 1.4rem; }
+            .vote-btn .btn-label { font-size: 0.95rem; }
+            .vote-btn .btn-hint { font-size: 0.7rem; }
+            
+            .confidence-section { margin-top: 15px; }
+            .confidence-label { font-size: 0.9rem; margin-bottom: 10px; }
+            .confidence-buttons { flex-direction: row; gap: 8px; flex-wrap: wrap; }
+            .confidence-btn { flex: 1; min-width: 80px; padding: 12px 10px; font-size: 0.9rem; }
+            .confidence-btn .multiplier { font-size: 0.7rem; }
+            
+            .btn-next { padding: 14px 28px; font-size: 0.95rem; width: 100%; margin: 15px auto; }
+            
+            .modal-content { padding: 20px; max-height: 85vh; }
+            .modal-content h2 { font-size: 1.15rem; margin-bottom: 15px; }
+            .modal-close { top: 12px; right: 14px; font-size: 1.3rem; }
+            
+            .about-content { max-width: 100%; }
+            .about-section { padding: 10px 12px; margin-bottom: 8px; }
+            .about-section h3 { font-size: 0.85rem; margin-bottom: 6px; }
+            .about-section p { font-size: 0.8rem; }
+            .about-section ul li { font-size: 0.8rem; }
+            .open-features { gap: 6px; }
+            .open-feature { min-width: 100px; padding: 8px; font-size: 0.75rem; }
+            .open-feature .open-icon { font-size: 1rem; }
+            .open-feature span:last-child { font-size: 0.7rem; }
+            
+            .tutorial-step { padding: 10px; gap: 10px; margin-bottom: 6px; }
+            .tutorial-step-number { width: 22px; height: 22px; font-size: 0.8rem; }
+            .tutorial-step-title { font-size: 0.85rem; }
+            .tutorial-step-desc { font-size: 0.8rem; }
+            .tutorial-scoring { padding: 12px; margin-top: 12px; }
+            .tutorial-scoring h4 { font-size: 0.85rem; }
+            .tutorial-scoring ul { font-size: 0.8rem; }
+            
+            .final-score { padding: 20px; }
+            .final-score h2 { font-size: 1.3rem; margin-bottom: 20px; }
+            .score-circle { width: 90px; height: 90px; margin-bottom: 20px; }
+            .score-circle .big-number { font-size: 1.8rem; }
+            .score-circle .of-total { font-size: 0.8rem; }
+            .score-message { font-size: 0.9rem; }
+            .final-stats { gap: 12px; margin-top: 20px; }
+            .final-stat { padding: 12px 18px; }
+            .final-stat .label { font-size: 0.7rem; }
+            .final-stat .value { font-size: 1.3rem; }
+            
+            .badges-container { gap: 8px; }
+            .badge { padding: 10px; min-width: 90px; }
+            .badge-icon { font-size: 1.3rem; }
+            .badge-name { font-size: 0.75rem; }
+            .badge-desc { font-size: 0.65rem; }
+            
+            .debrief, .surprising-section, .lessons-section { padding: 16px; }
+            .debrief h3, .surprising-section h3, .lessons-section h3 { font-size: 1rem; }
+            .debrief ul li { font-size: 0.85rem; }
+            .surprise-item, .lesson-item { padding: 10px 12px; }
+            .surprise-item-name, .lesson-item-name { font-size: 0.9rem; }
+            .surprise-item-text, .lesson-item-text { font-size: 0.8rem; }
+            
+            .btn-restart { padding: 14px 28px; font-size: 0.95rem; width: 100%; }
+            
+            .credits-footer { margin-top: 25px; padding-top: 15px; font-size: 0.8rem; }
+            .credits-footer .credits-sub { font-size: 0.75rem; }
+            
+            .popsci-links { gap: 6px; }
+            .popsci-links a { padding: 5px 10px; font-size: 0.8rem; }
+        }
+        
+        @media (max-width: 380px) {
+            body { font-size: 14px; }
+            header h1 { font-size: 1.4rem; }
+            .intro-hero { gap: 8px; }
+            .hero-icon { padding: 10px 12px; min-width: 70px; }
+            .card-wrapper { height: 300px; }
+            .vote-btn { padding: 14px 10px; }
+            .confidence-buttons { flex-direction: column; }
+            .confidence-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="streak-display" id="streak-display">3 in a row</div>
+    <div class="milestone-display" id="milestone-display">
+        <div class="main">Halfway Complete</div>
+        <div class="sub">5 cases remaining</div>
+    </div>
+
+    <button class="sound-toggle" onclick="toggleSound()" title="Toggle sound">
+        <span id="sound-icon">🔊</span>
+    </button>
+
+    <div class="container" id="main-container">
+        <header>
+            <h1>Boom or Bust?</h1>
+            <p class="subtitle">An Innovation Prediction Exercise</p>
+        </header>
+
+        <!-- Intro Screen -->
+        <div id="intro-screen" class="screen active">
+            <div class="intro-content">
+                <div class="intro-hero">
+                    <div class="hero-icon boom">
+                        <span class="icon">▲</span>
+                        <span class="label">Boom</span>
+                    </div>
+                    <div class="hero-icon question">
+                        <span class="icon">?</span>
+                        <span class="label">Predict</span>
+                    </div>
+                    <div class="hero-icon bust">
+                        <span class="icon">▼</span>
+                        <span class="label">Bust</span>
+                    </div>
+                </div>
+                <p>
+                    Each year, <em>Popular Science</em> magazine honours breakthrough innovations with their prestigious "Best of What's New" awards. 
+                    Yet predicting which technologies will achieve market success remains notoriously difficult—even for expert judges.
+                </p>
+                
+                <div class="intro-rules">
+                    <h3>The Challenge</h3>
+                    <ul>
+                        <li>You will review <strong>10 actual BOWN award winners</strong> from 2010–2019, randomly selected from a pool of 36 innovations</li>
+                        <li>Predict whether each became a <strong style="color: var(--success)">BOOM</strong> (commercial success) or <strong style="color: var(--failure)">BUST</strong> (market failure)</li>
+                        <li>Each innovation has a 30-second decision window</li>
+                        <li>Every session presents different innovations in random order</li>
+                    </ul>
+                </div>
+                
+                <div class="time-badge">Approximately 8 minutes · 10 cases · 30 seconds each</div>
+
+                <div class="start-section">
+                    <button class="btn btn-start" onclick="startGame()">
+                        Begin Exercise
+                    </button>
+                    <div class="intro-buttons-row">
+                        <button class="btn-secondary" onclick="openTutorialModal()">
+                            How to Play
+                        </button>
+                        <button class="btn-secondary" onclick="openAboutModal()">
+                            About This Game
+                        </button>
+                    </div>
+                </div>
+
+                <div class="credits-footer">
+                    <p>© 2026 <span class="institution">Ammon Salter, Warwick Business School</span></p>
+                    <p>Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></p>
+                    <p class="credits-sub">Built with assistance from Claude (Anthropic)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-label">Points</div>
+                    <div class="stat-value points" id="points-score">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value streak" id="streak-score">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Case</div>
+                    <div class="stat-value neutral"><span id="current-card">1</span>/10</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Correct</div>
+                    <div class="stat-value correct" id="correct-score">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Wrong</div>
+                    <div class="stat-value wrong" id="wrong-score">0</div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar" style="width: 10%"></div>
+            </div>
+
+            <div class="timer-container" id="timer-container">
+                <div class="timer">
+                    <span class="timer-icon">⏱</span>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar" id="timer-bar"></div>
+                    </div>
+                    <span class="timer-text" id="timer-text">30s</span>
+                    <span class="speed-bonus" id="speed-bonus"></span>
+                </div>
+            </div>
+
+            <div class="card-wrapper">
+                <div class="card" id="card">
+                    <div class="card-face card-front" id="card-front">
+                        <div class="year-badge" id="card-year">2015</div>
+                        <h2 class="innovation-name" id="card-name">Innovation Name</h2>
+                        <p class="innovation-desc" id="card-desc">Description of the innovation goes here...</p>
+                        <div class="expert-quote" id="card-quote">Expert quote goes here.</div>
+                    </div>
+                    <div class="card-face card-back" id="card-back">
+                        <div class="result-header">
+                            <span class="result-icon" id="result-icon">▲</span>
+                            <span class="result-label" id="result-label">BOOM</span>
+                        </div>
+                        <div class="company-name" id="company-name">Company Name</div>
+                        <div class="result-explanation" id="result-explanation">Explanation...</div>
+                        <div class="lesson-box" id="lesson-box">
+                            <strong>Key Insight</strong>
+                            <p id="lesson-text">Lesson text...</p>
+                        </div>
+                        <div class="points-earned" id="points-earned">
+                            <div class="points-text" id="points-text">+100 points</div>
+                            <div class="points-breakdown" id="points-breakdown"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vote-buttons-container" id="vote-buttons">
+                <button class="vote-btn boom-btn" id="btn-boom" onclick="selectAnswer('boom')">
+                    <span class="btn-icon">▲</span>
+                    <span class="btn-label">Boom</span>
+                    <span class="btn-hint">Commercial Success</span>
+                </button>
+                <button class="vote-btn bust-btn" id="btn-bust" onclick="selectAnswer('bust')">
+                    <span class="btn-icon">▼</span>
+                    <span class="btn-label">Bust</span>
+                    <span class="btn-hint">Market Failure</span>
+                </button>
+            </div>
+
+            <div class="confidence-section" id="confidence-section">
+                <div class="confidence-label">How confident are you in this prediction?</div>
+                <div class="confidence-buttons">
+                    <button class="confidence-btn" onclick="submitWithConfidence(1)">
+                        Uncertain
+                        <span class="multiplier">1× points</span>
+                    </button>
+                    <button class="confidence-btn" onclick="submitWithConfidence(2)">
+                        Confident
+                        <span class="multiplier">2× points</span>
+                    </button>
+                    <button class="confidence-btn" onclick="submitWithConfidence(3)">
+                        Very Confident
+                        <span class="multiplier">3× points</span>
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn-next" id="next-btn" onclick="nextCard()">
+                Next Case →
+            </button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <div class="results-content">
+                <div class="final-score">
+                    <h2>Exercise Complete</h2>
+                    <div class="score-circle">
+                        <span class="big-number" id="final-correct">0</span>
+                        <span class="of-total">of 10</span>
+                    </div>
+                    <p class="score-message" id="score-message">
+                        Your performance message...
+                    </p>
+                    <div class="final-stats">
+                        <div class="final-stat">
+                            <div class="label">Points</div>
+                            <div class="value gold" id="final-points">0</div>
+                        </div>
+                        <div class="final-stat">
+                            <div class="label">Best Streak</div>
+                            <div class="value purple" id="final-streak">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievements -->
+                <div class="achievements-section">
+                    <h3>Achievements</h3>
+                    <div class="badges-container" id="badges-container">
+                    </div>
+                </div>
+
+                <!-- Pattern Summary -->
+                <div class="debrief">
+                    <h3>Key Patterns in Innovation Outcomes</h3>
+                    <ul id="pattern-summary">
+                    </ul>
+                </div>
+
+                <!-- Most Surprising -->
+                <div class="surprising-section" id="surprising-section">
+                    <h3>Counter-Intuitive Outcomes</h3>
+                    <div id="surprise-items">
+                    </div>
+                </div>
+                
+                <!-- Lessons from Mistakes -->
+                <div class="lessons-section" id="lessons-section" style="display: none;">
+                    <h3>Lessons from Incorrect Predictions</h3>
+                    <div id="lessons-items">
+                    </div>
+                </div>
+                
+                <button class="btn btn-restart" onclick="restartGame()">
+                    Play Again (New Set)
+                </button>
+
+                <div class="credits-footer">
+                    <p>© 2026 <span class="institution">Ammon Salter, Warwick Business School</span></p>
+                    <p>Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></p>
+                    <p class="credits-sub">Built with assistance from Claude (Anthropic)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div class="modal-overlay" id="tutorial-modal" onclick="closeTutorialModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeTutorialModal()">×</button>
+            <h2>How to Play</h2>
+            
+            <div class="tutorial-step">
+                <div class="tutorial-step-number">1</div>
+                <div class="tutorial-step-content">
+                    <div class="tutorial-step-title">Read the Innovation Card</div>
+                    <div class="tutorial-step-desc">Each card describes a real innovation that won a Popular Science "Best of What's New" award between 2010–2019. The company name is hidden—you only see what the technology does.</div>
+                </div>
+            </div>
+            
+            <div class="tutorial-step">
+                <div class="tutorial-step-number">2</div>
+                <div class="tutorial-step-content">
+                    <div class="tutorial-step-title">Make Your Prediction</div>
+                    <div class="tutorial-step-desc">Within 30 seconds, decide: Did this become a <strong style="color: var(--success)">BOOM</strong> (commercial success) or a <strong style="color: var(--failure)">BUST</strong> (market failure)?</div>
+                </div>
+            </div>
+            
+            <div class="tutorial-step">
+                <div class="tutorial-step-number">3</div>
+                <div class="tutorial-step-content">
+                    <div class="tutorial-step-title">Indicate Your Confidence</div>
+                    <div class="tutorial-step-desc">After selecting your prediction, indicate how confident you are. Higher confidence means greater rewards if correct—but also larger penalties if wrong.</div>
+                </div>
+            </div>
+            
+            <div class="tutorial-step">
+                <div class="tutorial-step-number">4</div>
+                <div class="tutorial-step-content">
+                    <div class="tutorial-step-title">Review the Outcome</div>
+                    <div class="tutorial-step-desc">The card reveals what actually happened—including the company name and analysis of why it succeeded or failed.</div>
+                </div>
+            </div>
+            
+            <div class="tutorial-scoring">
+                <h4>Scoring System</h4>
+                <ul>
+                    <li><strong>Base points:</strong> 100 × your confidence multiplier (1×, 2×, or 3×)</li>
+                    <li><strong>Speed bonus:</strong> +50 points for answers under 10 seconds; +25 under 20 seconds</li>
+                    <li><strong>Streak bonus:</strong> +25 points for each consecutive correct prediction</li>
+                    <li><strong>Incorrect prediction:</strong> −50 × your confidence multiplier</li>
+                    <li><strong>Timeout:</strong> −25 points</li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-modal-close" onclick="closeTutorialModal()">Got It</button>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal-overlay" id="about-modal" onclick="closeAboutModal(event)">
+        <div class="modal-content about-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeAboutModal()">×</button>
+            <h2>About This Game</h2>
+            
+            <div class="about-section purpose">
+                <h3>🎯 Purpose</h3>
+                <p>
+                    <strong>Boom or Bust?</strong> is an educational exercise designed to teach students and professionals about the challenges of predicting innovation success. Through rapid decision-making, players discover how difficult it is to forecast commercial outcomes—even for technologies endorsed by expert judges.
+                </p>
+            </div>
+            
+            <div class="about-section learning">
+                <h3>📚 Learning Objectives</h3>
+                <ul>
+                    <li>Recognise the inherent uncertainty in technology commercialisation</li>
+                    <li>Understand that expert endorsement doesn't guarantee market success</li>
+                    <li>Identify common patterns in innovation success and failure</li>
+                </ul>
+            </div>
+            
+            <div class="about-section educational">
+                <h3>🏫 Educational Use</h3>
+                <p>
+                    This exercise works well as a session opener for courses on innovation management, technology strategy, or entrepreneurship. It typically sparks rich discussion about why "expert-approved" innovations fail and what factors distinguish market winners from losers.
+                </p>
+            </div>
+            
+            <div class="about-section source">
+                <h3>📖 Source & Attribution</h3>
+                <p>
+                    All innovations featured are verified winners of <em>Popular Science</em> magazine's "Best of What's New" awards (2010–2019). All descriptions are original summaries; outcome data compiled from public sources. The exercise draws from 36 innovations—18 commercial successes and 18 market failures.
+                </p>
+                <div class="popsci-links">
+                    <a href="https://www.popsci.com/gadgets/article/2010-12/2010s-100-best-innovations-year-all-one-place/" target="_blank">2010</a>
+                    <a href="https://www.popsci.com/technology/article/2011-12/best-whats-new-2011/" target="_blank">2011</a>
+                    <a href="https://www.popsci.com/science/article/2012-11/best-whats-new-2012" target="_blank">2012</a>
+                    <a href="https://www.popsci.com/popular-sciences-best-whats-new-gallery/" target="_blank">2014</a>
+                    <a href="https://www.popsci.com/100-greatest-innovations-2015/" target="_blank">2015</a>
+                    <a href="https://www.popsci.com/100-greatest-innovations-2016/" target="_blank">2016</a>
+                    <a href="https://www.popsci.com/best-of-whats-new-list-2017/" target="_blank">2017</a>
+                    <a href="https://www.popsci.com/technology/best-of-whats-new-2019/" target="_blank">2019</a>
+                </div>
+            </div>
+            
+            <div class="about-section open">
+                <h3>✨ Free & Open</h3>
+                <div class="open-features">
+                    <div class="open-feature">
+                        <span class="open-icon">💰</span>
+                        <strong>Completely Free</strong>
+                        <span>No subscriptions or paywalls</span>
+                    </div>
+                    <div class="open-feature">
+                        <span class="open-icon">🔒</span>
+                        <strong>No Data Capture</strong>
+                        <span>We don't collect your information</span>
+                    </div>
+                    <div class="open-feature">
+                        <span class="open-icon">🔧</span>
+                        <strong>Fully Adaptable</strong>
+                        <span>Modify for your own needs (CC BY-NC-SA 4.0)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-modal-close" onclick="closeAboutModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let soundEnabled = true;
+        let musicGain = null;
+        let musicPlaying = false;
+        let musicInterval = null;
+
+        const TIMER_DURATION = 30;
+        const GAME_LENGTH = 10;
+        let timerInterval = null;
+        let timeRemaining = TIMER_DURATION;
+        let answerTime = 0;
+
+        let currentIndex = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let totalPoints = 0;
+        let currentStreak = 0;
+        let bestStreak = 0;
+        let selectedAnswer = null;
+        let shuffledInnovations = [];
+        let gameHistory = [];
+        let fastAnswers = 0;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+            document.querySelector('.sound-toggle').classList.toggle('muted', !soundEnabled);
+            if (musicGain) {
+                musicGain.gain.setValueAtTime(soundEnabled ? 0.04 : 0, audioContext.currentTime);
+            }
+        }
+
+        function playStartSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            [392, 493.88, 587.33].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                gain.gain.setValueAtTime(0, now + i * 0.12);
+                gain.gain.linearRampToValueAtTime(0.2, now + i * 0.12 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.2);
+                osc.start(now + i * 0.12);
+                osc.stop(now + i * 0.12 + 0.25);
+            });
+        }
+
+        function startBackgroundMusic() {
+            if (!soundEnabled || musicPlaying) return;
+            initAudio();
+            musicPlaying = true;
+            musicGain = audioContext.createGain();
+            musicGain.connect(audioContext.destination);
+            musicGain.gain.setValueAtTime(0.04, audioContext.currentTime);
+
+            function playLoop() {
+                if (!musicPlaying) return;
+                const now = audioContext.currentTime;
+                [261.63, 329.63, 392, 329.63].forEach((freq, i) => {
+                    const osc = audioContext.createOscillator();
+                    const noteGain = audioContext.createGain();
+                    osc.connect(noteGain);
+                    noteGain.connect(musicGain);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.7);
+                    noteGain.gain.setValueAtTime(0, now + i * 0.7);
+                    noteGain.gain.linearRampToValueAtTime(0.15, now + i * 0.7 + 0.05);
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.7 + 0.6);
+                    osc.start(now + i * 0.7);
+                    osc.stop(now + i * 0.7 + 0.65);
+                });
+            }
+            playLoop();
+            musicInterval = setInterval(playLoop, 2800);
+        }
+
+        function stopBackgroundMusic() {
+            musicPlaying = false;
+            if (musicInterval) clearInterval(musicInterval);
+            if (musicGain) musicGain.gain.setValueAtTime(0, audioContext.currentTime);
+        }
+
+        function playCorrectSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            if (musicGain) musicGain.gain.setValueAtTime(0.01, audioContext.currentTime);
+            const now = audioContext.currentTime;
+            [523.25, 659.25, 783.99].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0, now + i * 0.1);
+                gain.gain.linearRampToValueAtTime(0.25, now + i * 0.1 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.35);
+            });
+            setTimeout(() => { if (musicGain && soundEnabled) musicGain.gain.setValueAtTime(0.04, audioContext.currentTime); }, 600);
+        }
+
+        function playWrongSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            if (musicGain) musicGain.gain.setValueAtTime(0.01, audioContext.currentTime);
+            const now = audioContext.currentTime;
+            // Two descending tones for a clear "wrong" feeling
+            [280, 200].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                gain.gain.setValueAtTime(0.2, now + i * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.15);
+                osc.start(now + i * 0.12);
+                osc.stop(now + i * 0.12 + 0.18);
+            });
+            setTimeout(() => { if (musicGain && soundEnabled) musicGain.gain.setValueAtTime(0.04, audioContext.currentTime); }, 500);
+        }
+
+        function playTickSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        function playTimeoutSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            [300, 250, 200].forEach((freq, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.12);
+                gain.gain.setValueAtTime(0.12, now + i * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.1);
+                osc.start(now + i * 0.12);
+                osc.stop(now + i * 0.12 + 0.12);
+            });
+        }
+
+        function playWhooshSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            const noise = audioContext.createOscillator();
+            const noiseGain = audioContext.createGain();
+            noise.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            noise.type = 'sine';
+            noise.frequency.setValueAtTime(200, now);
+            noise.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+            noise.frequency.exponentialRampToValueAtTime(350, now + 0.25);
+            noiseGain.gain.setValueAtTime(0.08, now);
+            noiseGain.gain.linearRampToValueAtTime(0.12, now + 0.08);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            noise.start(now);
+            noise.stop(now + 0.3);
+        }
+
+        function playClickSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.setValueAtTime(400, now + 0.03);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+
+        function playFlipSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.18);
+        }
+
+        function showMilestone(main, sub) {
+            const display = document.getElementById('milestone-display');
+            display.querySelector('.main').textContent = main;
+            display.querySelector('.sub').textContent = sub;
+            display.classList.remove('show');
+            void display.offsetWidth;
+            display.classList.add('show');
+        }
+
+        function shakeScreen() {
+            const container = document.getElementById('main-container');
+            container.classList.add('shake');
+            setTimeout(() => container.classList.remove('shake'), 400);
+        }
+
+        function showStreakDisplay(streak) {
+            const display = document.getElementById('streak-display');
+            display.textContent = `${streak} in a row`;
+            display.classList.remove('show');
+            void display.offsetWidth;
+            display.classList.add('show');
+        }
+
+        function startTimer() {
+            timeRemaining = TIMER_DURATION;
+            updateTimerDisplay();
+            updateSpeedBonus();
+            
+            timerInterval = setInterval(() => {
+                timeRemaining -= 0.1;
+                updateTimerDisplay();
+                updateSpeedBonus();
+                
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    handleTimeout();
+                }
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            answerTime = TIMER_DURATION - timeRemaining;
+        }
+
+        function updateTimerDisplay() {
+            const timerBar = document.getElementById('timer-bar');
+            const timerText = document.getElementById('timer-text');
+            const percentage = Math.max(0, (timeRemaining / TIMER_DURATION) * 100);
+            timerBar.style.width = percentage + '%';
+            timerText.textContent = Math.max(0, Math.ceil(timeRemaining)) + 's';
+            timerBar.classList.remove('warning', 'danger');
+            timerText.classList.remove('warning', 'danger');
+            if (timeRemaining <= 5) {
+                timerBar.classList.add('danger');
+                timerText.classList.add('danger');
+                if (timeRemaining > 0 && Math.ceil(timeRemaining) !== Math.ceil(timeRemaining + 0.1)) {
+                    playTickSound();
+                }
+            } else if (timeRemaining <= 10) {
+                timerBar.classList.add('warning');
+                timerText.classList.add('warning');
+            }
+        }
+
+        function updateSpeedBonus() {
+            const speedBonusEl = document.getElementById('speed-bonus');
+            if (timeRemaining > 20) {
+                speedBonusEl.textContent = '+50 speed bonus';
+            } else if (timeRemaining > 10) {
+                speedBonusEl.textContent = '+25 speed bonus';
+            } else {
+                speedBonusEl.textContent = '';
+            }
+        }
+
+        function getSpeedBonus() {
+            if (answerTime < 10) return 50;
+            if (answerTime < 20) return 25;
+            return 0;
+        }
+
+        function handleTimeout() {
+            playTimeoutSound();
+            shakeScreen();
+            disableButtons();
+            wrongCount++;
+            currentStreak = 0;
+            showResult(null, 1);
+        }
+
+        function disableButtons() {
+            document.getElementById('btn-boom').disabled = true;
+            document.getElementById('btn-bust').disabled = true;
+            document.getElementById('vote-buttons').style.display = 'none';
+        }
+
+        function enableButtons() {
+            document.getElementById('btn-boom').disabled = false;
+            document.getElementById('btn-bust').disabled = false;
+            document.getElementById('vote-buttons').style.display = 'flex';
+        }
+
+        function selectAnswer(answer) {
+            playClickSound();
+            selectedAnswer = answer;
+            stopTimer();
+            disableButtons();
+            document.getElementById('confidence-section').classList.add('show');
+        }
+
+        function submitWithConfidence(multiplier) {
+            playClickSound();
+            document.getElementById('confidence-section').classList.remove('show');
+            showResult(selectedAnswer, multiplier);
+        }
+
+        function showResult(guess, confidenceMultiplier) {
+            const innovation = shuffledInnovations[currentIndex];
+            const isCorrect = guess === innovation.result;
+            const isTimeout = guess === null;
+
+            playFlipSound();
+
+            let basePoints = 0;
+            let speedBonus = 0;
+            let streakBonus = 0;
+            let pointsEarned = 0;
+            let breakdown = '';
+
+            if (!isTimeout) {
+                if (answerTime < 10) fastAnswers++;
+                
+                if (isCorrect) {
+                    basePoints = 100 * confidenceMultiplier;
+                    speedBonus = getSpeedBonus();
+                    currentStreak++;
+                    if (currentStreak > bestStreak) bestStreak = currentStreak;
+                    streakBonus = currentStreak > 1 ? (currentStreak - 1) * 25 : 0;
+                    pointsEarned = basePoints + speedBonus + streakBonus;
+                    totalPoints += pointsEarned;
+                    correctCount++;
+                    
+                    playCorrectSound();
+                    
+                    if (currentStreak >= 3) {
+                        showStreakDisplay(currentStreak);
+                    }
+                    
+                    breakdown = `${100}×${confidenceMultiplier}`;
+                    if (speedBonus > 0) breakdown += ` + ${speedBonus} speed`;
+                    if (streakBonus > 0) breakdown += ` + ${streakBonus} streak`;
+                } else {
+                    pointsEarned = -50 * confidenceMultiplier;
+                    totalPoints = Math.max(0, totalPoints + pointsEarned);
+                    wrongCount++;
+                    currentStreak = 0;
+                    playWrongSound();
+                    shakeScreen();
+                    breakdown = `Incorrect (${confidenceMultiplier}× confidence)`;
+                }
+            } else {
+                pointsEarned = -25;
+                totalPoints = Math.max(0, totalPoints + pointsEarned);
+            }
+
+            gameHistory.push({
+                innovation: innovation,
+                guess: guess,
+                correct: isCorrect,
+                timeout: isTimeout,
+                time: answerTime,
+                confidence: confidenceMultiplier
+            });
+
+            const cardBack = document.getElementById('card-back');
+            cardBack.className = 'card-face card-back';
+
+            if (innovation.result === 'boom') {
+                cardBack.classList.add('boom-result');
+                document.getElementById('result-icon').textContent = '▲';
+                document.getElementById('result-label').textContent = 'BOOM';
+                document.getElementById('result-label').className = 'result-label boom';
+            } else {
+                cardBack.classList.add('bust-result');
+                document.getElementById('result-icon').textContent = '▼';
+                document.getElementById('result-label').textContent = 'BUST';
+                document.getElementById('result-label').className = 'result-label bust';
+            }
+
+            document.getElementById('company-name').textContent = innovation.company;
+            document.getElementById('result-explanation').innerHTML = innovation.explanation;
+            document.getElementById('lesson-box').style.display = 'none';
+
+            const pointsEarnedEl = document.getElementById('points-earned');
+            const pointsTextEl = document.getElementById('points-text');
+            const pointsBreakdownEl = document.getElementById('points-breakdown');
+            
+            if (isTimeout) {
+                pointsTextEl.textContent = `Time expired: ${pointsEarned} points`;
+                pointsEarnedEl.className = 'points-earned timeout';
+                pointsBreakdownEl.textContent = '';
+            } else if (isCorrect) {
+                pointsTextEl.textContent = `Correct: +${pointsEarned} points`;
+                pointsEarnedEl.className = 'points-earned correct';
+                pointsBreakdownEl.textContent = breakdown;
+            } else {
+                pointsTextEl.textContent = `Incorrect: ${pointsEarned} points`;
+                pointsEarnedEl.className = 'points-earned wrong';
+                pointsBreakdownEl.textContent = breakdown;
+            }
+
+            document.getElementById('card').classList.add('flipped');
+            document.getElementById('confidence-section').classList.remove('show');
+            document.getElementById('next-btn').style.display = 'block';
+            document.getElementById('timer-container').style.display = 'none';
+
+            if (currentIndex === shuffledInnovations.length - 1) {
+                document.getElementById('next-btn').textContent = 'View Results';
+            } else {
+                document.getElementById('next-btn').textContent = 'Next Case →';
+            }
+
+            updateScores();
+        }
+
+        // Innovation data - ALL verified Popular Science "Best of What's New" Award Winners
+        const innovations = [
+            // === BOOMS (18) ===
+            {
+                year: 2010, name: "Desert Tree-Growing Device",
+                desc: "A bucket-shaped box that captures rainwater and condensation to help trees grow in deserts without irrigation. In trials, 88% of trees survived vs just 10% without it.",
+                quote: "Grand Award, Green. — Popular Science BOWN 2010",
+                result: "boom", company: "Groasis Waterboxx (Netherlands)",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Genuinely solved a real problem. Simple, low-tech design. 90% less water than traditional methods. Named "National Icon of the Netherlands" in 2016.</div>Still operating in 2025. Projects deployed across 30+ countries including Kuwait, Dubai, Spain, Morocco, and Ecuador.`,
+                lesson: "Simple solutions to big problems can create lasting impact. The Waterboxx used biomimicry and basic physics—no cutting-edge technology required."
+            },
+            {
+                year: 2010, name: "Bionic Prosthetic Fingers",
+                desc: "Individual prosthetic fingers controlled by electrical signals from the wearer's muscles. Allows partial-hand amputees to grip objects naturally for the first time.",
+                quote: "Health category winner. — Popular Science BOWN 2010",
+                result: "boom", company: "Touch Bionics ProDigits (Scotland)",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> First NHS Scotland spinout (2003). Solved unmet need for partial-hand amputees. Acquired by Icelandic prosthetics giant Össur for £27.5M in 2016.</div>Over 5,000 patients fitted worldwide. Ongoing R&D investment.`,
+                lesson: "Deep expertise in a niche creates defensible value. Touch Bionics spent years developing unique capabilities that made them an attractive acquisition target."
+            },
+            {
+                year: 2012, name: "Learning Thermostat",
+                desc: "A thermostat that learns your schedule and temperature preferences after just one week, then programs itself for maximum efficiency. Smartphone-controlled.",
+                quote: "Grand Award, Home. — Popular Science BOWN 2012",
+                result: "boom", company: "Nest Learning Thermostat",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Created by iPod designer Tony Fadell. Made boring product beautiful. Google acquired for $3.2B in 2014.</div>Became foundation of Google's smart home ecosystem. Now leads the Google Nest brand.`,
+                lesson: "Design thinking transforms commodity products. Thermostats existed for decades, but Nest reimagined the entire experience."
+            },
+            {
+                year: 2014, name: "Reusable Rocket Boosters",
+                desc: "Rockets that land themselves after launch for reuse. Attempting what NASA and others said was impossible.",
+                quote: "This changes the economics of space travel. — Popular Science BOWN 2014",
+                result: "boom", company: "SpaceX Falcon 9",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Vertical integration. Iterative testing culture. Clear cost reduction goal. NASA contracts provided runway.</div>Revolutionised space industry. Now routinely lands boosters.`,
+                lesson: "Ambitious technical goals can succeed when paired with sustainable business models. SpaceX had paying customers funding development."
+            },
+            {
+                year: 2014, name: "Aluminum Body Pickup Truck",
+                desc: "America's best-selling vehicle rebuilt with military-grade aluminum. 700 pounds lighter. Risky redesign.",
+                quote: "The boldest move in trucks in decades. — Popular Science BOWN 2014",
+                result: "boom", company: "Ford F-150",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Better fuel economy. Maintained toughness. Ford bet big on manufacturing retooling.</div>Remained America's best-selling truck. Industry followed with aluminum adoption.`,
+                lesson: "Established players can make bold moves when they control the whole value chain."
+            },
+            {
+                year: 2015, name: "Voice-Controlled Home Speaker",
+                desc: "Cylindrical speaker with always-listening voice assistant. Answers questions, controls smart home, plays music.",
+                quote: "HAL for your home. — Popular Science BOWN 2015",
+                result: "boom", company: "Amazon Echo",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> First-mover advantage. Open platform for developers. Low price encouraged experimentation.</div>Created smart speaker category. Over 100 million devices sold.`,
+                lesson: "Privacy concerns don't always block adoption. Convenience often wins—especially at low price points."
+            },
+            {
+                year: 2015, name: "Home Battery Storage",
+                desc: "Wall-mounted battery storing solar energy or cheap off-peak power. Sleek design. Energy independence promise.",
+                quote: "This changes everything about home energy. — Elon Musk, BOWN 2015 winner",
+                result: "boom", company: "Tesla Powerwall",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Rode solar adoption wave. Climate awareness. Made batteries desirable, not just functional.</div>Home energy storage now multi-billion dollar industry.`,
+                lesson: "Timing matters enormously. The technology existed before, but rising solar adoption created the demand moment."
+            },
+            {
+                year: 2015, name: "Professional Camera Drone",
+                desc: "Quadcopter with 4K camera on stabilised gimbal. Transforms aerial cinematography. Two-person operation.",
+                quote: "The ultimate drone for filmmakers. — Popular Science BOWN 2015",
+                result: "boom", company: "DJI Inspire 1",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Professional quality at consumer price. Integrated design. Continuous software updates.</div>DJI dominated drone market. Used in Hollywood productions.`,
+                lesson: "Hardware companies can win with software strategies. DJI's ecosystem created switching costs."
+            },
+            {
+                year: 2015, name: "Reversible USB Connector",
+                desc: "New USB standard that works either way you plug it in. Faster data, more power delivery. Universal compatibility goal.",
+                quote: "Finally, an end to the USB struggle. — Popular Science coverage",
+                result: "boom", company: "USB Type-C",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Industry consortium support. Genuinely superior. EU regulations mandated adoption.</div>Now mandatory standard. Even Apple adopted it.`,
+                lesson: "Standards succeed when they serve everyone's interests. Rare alignment between manufacturers, regulators, and consumers."
+            },
+            {
+                year: 2016, name: "Console Virtual Reality",
+                desc: "VR headset for existing PlayStation 4 owners. $400 vs $600+ PC headsets. 40+ million potential customers.",
+                quote: "VR for the masses. — Popular Science BOWN 2016",
+                result: "boom", company: "PlayStation VR",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Massive installed base. Lower price. Sony's game development relationships.</div>Over 5 million sold. Proved console VR viable.`,
+                lesson: "Distribution beats specs. PSVR wasn't the best VR system—but it connected to 40 million PS4s."
+            },
+            {
+                year: 2016, name: "4K OLED Television",
+                desc: "Ultra-thin TV with perfect blacks and infinite contrast. Self-emitting pixels. Premium positioning.",
+                quote: "Colors better than any other TV. — Popular Science BOWN 2016",
+                result: "boom", company: "LG Signature OLED",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Genuinely superior picture quality. Manufacturing improvements reduced cost.</div>OLED became premium TV standard. LG dominates OLED panel market.`,
+                lesson: "Premium positioning can work if the product genuinely delivers. Consumers could immediately see the difference."
+            },
+            {
+                year: 2017, name: "Hybrid Gaming Console",
+                desc: "Console that works on TV and as portable. Joy-Con controllers detach. From company whose previous console flopped.",
+                quote: "Grand Award, Entertainment. — Popular Science BOWN 2017",
+                result: "boom", company: "Nintendo Switch",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Unique value proposition. Perfect for modern lifestyles. Zelda: Breath of the Wild at launch.</div>Saved Nintendo. Over 140 million sold.`,
+                lesson: "Past failure doesn't predict future failure. Nintendo learned from the Wii U disaster."
+            },
+            {
+                year: 2017, name: "Super-Heavy Lift Rocket",
+                desc: "Most powerful operational rocket since Saturn V. 27 engines. Reusable side boosters. Mars mission capable.",
+                quote: "Grand Award, Aerospace. — Popular Science BOWN 2017",
+                result: "boom", company: "SpaceX Falcon Heavy",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Leveraged proven Falcon 9 tech. Spectacular demos. Commercial and government customers.</div>Operational heavy-lift rocket. Regular launches.`,
+                lesson: "Platform leverage creates compounding advantage. Built on proven systems rather than starting from scratch."
+            },
+            {
+                year: 2017, name: "Gene-Edited Cancer Therapy",
+                desc: "Patient's own cells genetically modified to fight their cancer. CAR-T therapy. First gene-edited treatment approved.",
+                quote: "Cells that cure cancer. — Popular Science BOWN 2017 Innovation of the Year",
+                result: "boom", company: "Novartis Kymriah",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> 83% remission rate in trials. Genuinely revolutionary approach. FDA approval validated technology.</div>First approved gene therapy for cancer.`,
+                lesson: "Revolutionary technology can succeed even at extreme prices ($475,000/treatment) if outcomes are dramatically better."
+            },
+            {
+                year: 2019, name: "Plant-Based Burger 2.0",
+                desc: "Meatless patty using 'heme' molecule to taste like beef. Improved recipe. Targeting meat-eaters, not vegetarians.",
+                quote: "Grand Award, Engineering. — Popular Science BOWN 2019",
+                result: "boom", company: "Impossible Burger 2.0",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Focused on taste, not ethics. Burger King partnership. Climate concerns as tailwind.</div>Mainstream success. Fast-food adoption.`,
+                lesson: "Reframing changes everything. Previous veggie burgers targeted vegetarians. Impossible targeted meat-eaters."
+            },
+            {
+                year: 2019, name: "Standalone VR Headset",
+                desc: "All-in-one VR with no PC or phone required. Inside-out tracking. Hand controllers included. $399.",
+                quote: "VR finally untethered. — Popular Science BOWN 2019",
+                result: "boom", company: "Oculus Quest",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> No setup friction. Good enough graphics. Social features. Facebook's marketing reach.</div>Became Meta Quest, VR market leader.`,
+                lesson: "Convenience beats quality for mass adoption. Quest graphics were worse than PC VR, but zero-setup expanded the market."
+            },
+            {
+                year: 2017, name: "Facial Recognition Phone Unlock",
+                desc: "Infrared camera system maps 30,000 points on your face. Replaces fingerprint sensor. Works in the dark.",
+                quote: "A phone knows your face. — Popular Science BOWN 2017",
+                result: "boom", company: "Apple Face ID (iPhone X)",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Genuinely more convenient than fingerprints. Secure enough for payments. Apple's ecosystem lock-in.</div>Now standard on all iPhones and iPads.`,
+                lesson: "Removing friction wins. Face ID eliminated the 'lift finger to sensor' step—tiny improvement, massive adoption."
+            },
+            {
+                year: 2016, name: "Precision Gene Editing Tool",
+                desc: "CRISPR-Cas9 allows scientists to edit DNA like a word processor. First successful human embryo editing in the US.",
+                quote: "A smart slice for a big cure. — Popular Science BOWN 2016",
+                result: "boom", company: "CRISPR Gene Editing",
+                explanation: `<div class="success-reason"><strong>Why it worked:</strong> Dramatically cheaper and faster than prior methods. Open-source approach accelerated research.</div>Revolutionised biotechnology. Nobel Prize 2020.`,
+                lesson: "Platform technologies create exponential value. CRISPR enabled thousands of applications across medicine and research."
+            },
+            // === BUSTS (18) ===
+            {
+                year: 2011, name: "3D Home Television",
+                desc: "Television bringing cinema-quality 3D into homes using special glasses. Every major manufacturer is launching 3D-capable sets. Heralded as the future of TV.",
+                quote: "Home Entertainment winner. — Popular Science BOWN 2011",
+                result: "bust", company: "3D Television (Vizio Theater 3D)",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Expensive glasses ($150/pair). Incompatible standards between brands. Viewer discomfort. Limited 3D content.</div>Dead by 2017. Sony, LG stopped supporting 3D entirely.`,
+                lesson: "Friction kills adoption. Requiring special glasses for every viewer was too much hassle for too little benefit."
+            },
+            {
+                year: 2012, name: "Anticipatory Virtual Assistant",
+                desc: "A virtual assistant that studies your routines and proactively presents information before you ask. Knows your calendar, location, traffic, and contacts.",
+                quote: "Grand Award, Software. — Popular Science BOWN 2012",
+                result: "bust", company: "Google Now",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> The technology was ahead of its time but the product was replaced by Google Assistant in 2016. Brand discontinued.</div>Google Now pioneered anticipatory computing, but Google's own successor made it obsolete.`,
+                lesson: "Being first doesn't guarantee the brand survives. The innovation succeeded; the product didn't."
+            },
+            {
+                year: 2012, name: "Waterless Textile Dyeing",
+                desc: "Revolutionary system using pressurized carbon dioxide instead of water to dye fabrics. Eliminates 40 gallons of water per pound of fabric and generates zero wastewater.",
+                quote: "Green category winner. — Popular Science BOWN 2012",
+                result: "bust", company: "DyeCoo Textile Systems (Netherlands)",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Machines cost €4M each. Only works with polyester, not cotton. Despite backing from Nike and IKEA, couldn't achieve scale. Declared bankrupt December 2025.</div>Had commercial installations but economics never worked.`,
+                lesson: "Environmental benefits don't guarantee commercial success. Major corporate backing and proven technology still couldn't overcome the economics."
+            },
+            {
+                year: 2014, name: "Smartwatch Platform",
+                desc: "Google's wearable OS for smartwatches. Android on your wrist. Multiple hardware partners.",
+                quote: "Notifications on your wrist change everything. — Popular Science coverage",
+                result: "bust", company: "Android Wear",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Poor battery life. Fragmented hardware. Apple Watch dominated. Confusing brand (now Wear OS).</div>Rebranded multiple times. Never achieved dominant market share.`,
+                lesson: "Open ecosystems don't always win. Tight hardware-software integration mattered more for watches than phones."
+            },
+            {
+                year: 2014, name: "Cylindrical Pro Computer",
+                desc: "Radical redesign of professional Mac. Black cylinder shape. Dual graphics cards. Thermal core cooling.",
+                quote: "Can't innovate anymore, my ass. — Apple executive at launch",
+                result: "bust", company: "Apple Mac Pro (2013)",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Thermal design limited upgrades. Couldn't add better GPUs. Pros needed expandability Apple removed.</div>Apple publicly admitted mistake. Complete redesign 2019.`,
+                lesson: "Know your customer. Apple optimised for elegance when pro users needed expandability."
+            },
+            {
+                year: 2015, name: "Augmented Reality Headset",
+                desc: "Holographic computer worn on head. Overlays 3D images on real world. Targets enterprise applications.",
+                quote: "A headset that creates holograms. — Popular Science BOWN 2015",
+                result: "bust", company: "Microsoft HoloLens",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> $3,000-3,500 price. Only ~50,000 first-gen sold. Lost $22B military contract. Microsoft exited hardware entirely in 2025.</div>Pioneered mixed reality but couldn't find a market.`,
+                lesson: "Pioneering technology ≠ market success. Being early often means bearing all the R&D costs."
+            },
+            {
+                year: 2016, name: "Affordable 200-Mile EV",
+                desc: "First mass-market electric car breaking 200-mile range barrier. $37,500. Beating Tesla to affordable long-range.",
+                quote: "GM gets there first, not Tesla. — Popular Science BOWN 2016",
+                result: "bust", company: "Chevrolet Bolt EV",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Massive battery recall (fire risk). Production halted for over a year. Tesla Model 3 dominated. GM discontinued it in 2023.</div>Being first to market meant nothing against Tesla's brand and charging network.`,
+                lesson: "First-mover advantage is overrated. Tesla's ecosystem created moats that 'first' couldn't overcome."
+            },
+            {
+                year: 2015, name: "E-Paper Smartwatch",
+                desc: "Smartwatch with week-long battery via e-paper display. Kickstarter sensation. Timeline interface.",
+                quote: "Longest-lasting smartwatch. — Popular Science BOWN 2015",
+                result: "bust", company: "Pebble Time Steel",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Apple Watch launched. Couldn't compete on features. Hardware startup costs. Running out of runway.</div>Sold to Fitbit 2016 for parts. Servers shut down.`,
+                lesson: "Pioneers often lose to fast followers with more resources."
+            },
+            {
+                year: 2015, name: "Autonomous Selfie Drone",
+                desc: "Palm-sized drone following you automatically. No piloting needed. Kickstarter raised £2.3M from 12,000 backers.",
+                quote: "The future of photography is in the air. — Kickstarter pitch",
+                result: "bust", company: "Zano",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Technology didn't exist. Team had no hardware experience. Overpromised everything. No working prototype.</div>Kickstarter's most infamous hardware disaster. Zero delivered.`,
+                lesson: "Crowdfunding can validate demand but not capability. 12,000 backers proved people wanted this—but wanting isn't the same as possible."
+            },
+            {
+                year: 2015, name: "Live Broadcasting App",
+                desc: "Stream live video to followers from your phone. Watch the world in real-time. Twitter acquisition.",
+                quote: "A broadcast network of your own. — Popular Science BOWN 2015",
+                result: "bust", company: "Periscope",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Instagram and Facebook added live video. Standalone app unnecessary. Twitter integration confusing.</div>Shut down by Twitter 2021.`,
+                lesson: "Features get absorbed by platforms. Once Facebook and Instagram copied it, users didn't need a separate app."
+            },
+            {
+                year: 2015, name: "Pressure-Sensitive Display",
+                desc: "Phone screen detecting press pressure for 'peek and pop' interactions. New dimension of touch.",
+                quote: "The next generation of multi-touch. — Apple keynote, BOWN 2015",
+                result: "bust", company: "Apple 3D Touch (iPhone 6S)",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Users didn't discover it. Developers didn't adopt it. Long-press achieved same result.</div>Removed from iPhones 2019. Four years of hardware complexity for feature nobody used.`,
+                lesson: "Invisible features fail. Even Apple couldn't make 3D Touch work because users had no visual cue it existed."
+            },
+            {
+                year: 2016, name: "3D Audio VR Headphones",
+                desc: "Headphones measuring your head shape for personalised 3D audio. Adapts to listener's anatomy.",
+                quote: "Most convincing 3D audio effects yet. — Popular Science BOWN 2016",
+                result: "bust", company: "Ossic X",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Kickstarter raised $2.7M. Manufacturing costs spiraled. Company ran out of money before shipping.</div>Company folded 2018. Never shipped to backers.`,
+                lesson: "Hardware economics are unforgiving. Software can iterate cheaply; hardware manufacturing costs are locked in."
+            },
+            {
+                year: 2016, name: "Internet Drone Aircraft",
+                desc: "Giant solar-powered drone providing internet to remote areas. 137-foot wingspan. Facebook's connectivity mission.",
+                quote: "One step closer to universal global web access. — Popular Science BOWN 2016",
+                result: "bust", company: "Facebook Aquila",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Crashed on test flights. Structural failures. Satellites proved more practical.</div>Cancelled 2018. Starlink took the market.`,
+                lesson: "Multiple paths to same goal. Drones and satellites could both provide internet—but satellites scaled better."
+            },
+            {
+                year: 2017, name: "Premium Android Phone",
+                desc: "Phone from Android's creator. Titanium and ceramic body. Modular accessories. Premium minimalist design.",
+                quote: "I'm going to fix what's wrong with smartphones. — Andy Rubin, creator",
+                result: "bust", company: "Essential Phone",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Buggy launch. Poor camera. Modules never materialised.</div>Sold only 150,000 units. Company shut down 2020.`,
+                lesson: "Credibility doesn't ship products. Andy Rubin created Android—but that didn't mean he could execute hardware manufacturing."
+            },
+            {
+                year: 2017, name: "Camera Sunglasses",
+                desc: "Sunglasses with built-in camera for Snapchat. Circular video format. $130 from vending machines.",
+                quote: "A camera you want to wear on your face. — Popular Science BOWN 2017",
+                result: "bust", company: "Snap Spectacles",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Novelty wore off fast. Limited use case. Hundreds of thousands unsold.</div>Snap wrote off $40M in inventory.`,
+                lesson: "Viral marketing isn't repeat usage. Vending machine scarcity created buzz—but no ongoing value."
+            },
+            {
+                year: 2019, name: "Cloud Gaming Platform",
+                desc: "Stream AAA games to any screen. No console needed. Google's infrastructure. 'The future of gaming.'",
+                quote: "Grand Award, Entertainment. — Popular Science BOWN 2019",
+                result: "bust", company: "Google Stadia",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> Latency issues. Library gaps. Google's commitment doubted (correctly).</div>Shut down January 2023. Google refunded all purchases.`,
+                lesson: "Reputation matters for platforms. Gamers didn't trust Google to commit long-term—and they were right."
+            },
+            {
+                year: 2019, name: "Electric Motorcycle",
+                desc: "Harley-Davidson's first all-electric motorcycle. 0-60 in 3 seconds. 146-mile range. Iconic brand goes electric.",
+                quote: "An electric Harley? That's not a Harley. — Traditionalist riders",
+                result: "bust", company: "Harley-Davidson LiveWire",
+                explanation: `<div class="failure-reason"><strong>What went wrong:</strong> $30K price. Core customers rejected electric. Spun off as separate brand.</div>Struggling as standalone. Iconic brand couldn't bridge to electric.`,
+                lesson: "Brand can be a prison. Harley's brand meant loud engines and rebellion—the opposite of quiet, eco-friendly."
+            }
+        ];
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function getCompanyId(companyName) {
+            const name = companyName.toLowerCase();
+            if (name.startsWith('spacex')) return 'spacex';
+            if (name.startsWith('apple')) return 'apple';
+            if (name.startsWith('google') || name === 'android wear') return 'google';
+            if (name.startsWith('facebook') || name.startsWith('oculus')) return 'meta';
+            return name.split(' ')[0];
+        }
+
+        function getRandomInnovations() {
+            const shuffled = shuffleArray([...innovations]);
+            const selected = [];
+            const usedCompanies = new Set();
+            
+            for (const innovation of shuffled) {
+                if (selected.length >= GAME_LENGTH) break;
+                const companyId = getCompanyId(innovation.company);
+                if (!usedCompanies.has(companyId)) {
+                    selected.push(innovation);
+                    usedCompanies.add(companyId);
+                }
+            }
+            return shuffleArray(selected);
+        }
+
+        function startGame() {
+            initAudio();
+            playStartSound();
+            setTimeout(startBackgroundMusic, 500);
+            
+            shuffledInnovations = getRandomInnovations();
+            currentIndex = 0;
+            correctCount = 0;
+            wrongCount = 0;
+            totalPoints = 0;
+            currentStreak = 0;
+            bestStreak = 0;
+            gameHistory = [];
+            fastAnswers = 0;
+            
+            document.getElementById('intro-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            updateCard();
+            updateScores();
+        }
+
+        function updateCard() {
+            const innovation = shuffledInnovations[currentIndex];
+            const card = document.getElementById('card');
+            
+            card.classList.remove('flipped');
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('timer-container').style.display = 'flex';
+            document.getElementById('confidence-section').classList.remove('show');
+            
+            enableButtons();
+            
+            document.getElementById('card-year').textContent = innovation.year;
+            document.getElementById('card-name').textContent = innovation.name;
+            document.getElementById('card-desc').textContent = innovation.desc;
+            document.getElementById('card-quote').innerHTML = innovation.quote;
+            
+            document.getElementById('current-card').textContent = currentIndex + 1;
+            document.getElementById('progress-bar').style.width = ((currentIndex + 1) / shuffledInnovations.length * 100) + '%';
+            
+            selectedAnswer = null;
+            startTimer();
+        }
+
+        function updateScores() {
+            document.getElementById('points-score').textContent = totalPoints;
+            document.getElementById('streak-score').textContent = currentStreak;
+            document.getElementById('correct-score').textContent = correctCount;
+            document.getElementById('wrong-score').textContent = wrongCount;
+        }
+
+        function nextCard() {
+            playWhooshSound();
+            currentIndex++;
+            
+            if (currentIndex === 5) {
+                showMilestone("Halfway Complete", "5 cases remaining");
+            } else if (currentIndex === 8) {
+                showMilestone("Final Cases", "2 remaining");
+            }
+            
+            if (currentIndex >= shuffledInnovations.length) {
+                showResults();
+            } else {
+                updateCard();
+            }
+        }
+
+        function showResults() {
+            stopBackgroundMusic();
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('results-screen').classList.add('active');
+            
+            document.getElementById('final-correct').textContent = correctCount;
+            document.getElementById('final-points').textContent = totalPoints;
+            document.getElementById('final-streak').textContent = bestStreak;
+            
+            const pct = (correctCount / shuffledInnovations.length) * 100;
+            let msg = '';
+            if (pct >= 80) msg = "Exceptional performance. You demonstrated strong pattern recognition for distinguishing market winners from failures.";
+            else if (pct >= 60) msg = "Strong performance. Note how established firms with significant resources sometimes failed while lean startups succeeded.";
+            else if (pct >= 40) msg = "Solid performance. Innovation outcomes are notoriously difficult to predict—many failure patterns only become apparent in hindsight.";
+            else msg = "This result illustrates a key insight: even domain experts struggle to predict which innovations will achieve commercial success.";
+            
+            document.getElementById('score-message').textContent = msg;
+            
+            generateAchievements();
+            generatePatternSummary();
+            generateSurprises();
+            generateLessons();
+        }
+
+        function generateAchievements() {
+            const container = document.getElementById('badges-container');
+            container.innerHTML = '';
+            
+            const boomsCorrect = gameHistory.filter(h => h.correct && h.innovation.result === 'boom').length;
+            const bustsCorrect = gameHistory.filter(h => h.correct && h.innovation.result === 'bust').length;
+            
+            const achievements = [
+                { icon: '🔍', name: 'Critical Evaluator', desc: 'Identified 3+ failures', earned: bustsCorrect >= 3 },
+                { icon: '✦', name: 'Opportunity Spotter', desc: 'Identified 3+ successes', earned: boomsCorrect >= 3 },
+                { icon: '⚡', name: 'Rapid Analyst', desc: '3+ quick decisions', earned: fastAnswers >= 3 },
+                { icon: '→', name: 'Consistent', desc: '4+ correct streak', earned: bestStreak >= 4 },
+                { icon: '✓', name: 'Perfect Score', desc: 'No errors', earned: wrongCount === 0 },
+                { icon: '⚖', name: 'Balanced', desc: 'Both types identified', earned: boomsCorrect >= 2 && bustsCorrect >= 2 }
+            ];
+            
+            const earned = achievements.filter(a => a.earned);
+            const locked = achievements.filter(a => !a.earned).slice(0, 2);
+            
+            [...earned, ...locked].forEach(achievement => {
+                const badge = document.createElement('div');
+                badge.className = 'badge' + (achievement.earned ? ' earned' : ' locked');
+                badge.innerHTML = `
+                    <span class="badge-icon">${achievement.icon}</span>
+                    <span class="badge-name">${achievement.name}</span>
+                    <span class="badge-desc">${achievement.desc}</span>
+                `;
+                container.appendChild(badge);
+            });
+        }
+
+        function generatePatternSummary() {
+            const patterns = [
+                "Expert endorsement doesn't predict market success—all these innovations won the same prestigious award.",
+                "First-mover advantage is often overrated; fast followers with better execution frequently win.",
+                "Technology readiness ≠ market readiness. Timing and ecosystem matter as much as the innovation itself.",
+                "Brand strength can be a liability when entering new categories that conflict with brand identity.",
+                "Platform economics create winner-take-all dynamics that make 'good enough' products fail."
+            ];
+            
+            const container = document.getElementById('pattern-summary');
+            container.innerHTML = '';
+            
+            shuffleArray(patterns).slice(0, 3).forEach(pattern => {
+                const li = document.createElement('li');
+                li.textContent = pattern;
+                container.appendChild(li);
+            });
+        }
+
+        function generateSurprises() {
+            const surprises = [
+                { company: "Pebble", text: "Kickstarter's most-funded tech product became worthless. Pioneers often lose to fast followers." },
+                { company: "Google Stadia", text: "Even Google's infrastructure couldn't overcome gamer skepticism about commitment." },
+                { company: "Apple Mac Pro (2013)", text: "Apple publicly admitted this was a mistake—even Apple gets it wrong." },
+                { company: "Nintendo Switch", text: "Nintendo's previous console was a disaster—past failure doesn't predict future failure." },
+                { company: "DyeCoo", text: "Nike and IKEA backing wasn't enough. Environmental benefits don't guarantee success." }
+            ];
+            
+            const container = document.getElementById('surprise-items');
+            container.innerHTML = '';
+            
+            shuffleArray(surprises).slice(0, 2).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'surprise-item';
+                div.innerHTML = `
+                    <div class="surprise-item-name">${item.company}</div>
+                    <div class="surprise-item-text">${item.text}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function generateLessons() {
+            const wrongWithLessons = gameHistory.filter(h => !h.correct && !h.timeout && h.innovation.lesson);
+            
+            const container = document.getElementById('lessons-items');
+            const section = document.getElementById('lessons-section');
+            container.innerHTML = '';
+            
+            if (wrongWithLessons.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            
+            wrongWithLessons.forEach(h => {
+                const item = document.createElement('div');
+                item.className = 'lesson-item';
+                item.innerHTML = `
+                    <div class="lesson-item-name">${h.innovation.company} <span style="font-weight:400;color:var(--text-muted);">(${h.innovation.result === 'boom' ? 'was a success' : 'failed'})</span></div>
+                    <div class="lesson-item-text">${h.innovation.lesson}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function restartGame() {
+            document.getElementById('results-screen').classList.remove('active');
+            document.getElementById('intro-screen').classList.add('active');
+        }
+
+        function openAboutModal() {
+            document.getElementById('about-modal').classList.add('active');
+        }
+
+        function closeAboutModal(event) {
+            if (!event || event.target === document.getElementById('about-modal')) {
+                document.getElementById('about-modal').classList.remove('active');
+            }
+        }
+
+        function openTutorialModal() {
+            document.getElementById('tutorial-modal').classList.add('active');
+        }
+
+        function closeTutorialModal(event) {
+            if (!event || event.target === document.getElementById('tutorial-modal')) {
+                document.getElementById('tutorial-modal').classList.remove('active');
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAboutModal();
+                closeTutorialModal();
+            }
+        });
+    </script>
+</body>
+</html>
