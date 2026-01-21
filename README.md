@@ -61,7 +61,7 @@ All innovations are verified winners of *Popular Science* magazine's "Best of Wh
 ## Author
 
 **Ammon Salter**  
-Warwick Business School
+Warwick Business School, University of Warwick
 
 Built with assistance from Claude (Anthropic)
 
