@@ -2821,9 +2821,18 @@
             ];
             
             const container = document.getElementById('surprise-items');
+            const section = document.getElementById('surprising-section');
             container.innerHTML = '';
-            
-            shuffleArray(surprises).slice(0, 2).forEach(item => {
+
+            // only show notes about cases this player actually saw
+            const played = gameHistory.map(entry => entry.innovation.company);
+            const shown = surprises.filter(item =>
+                played.some(name => name.toLowerCase().indexOf(item.company.toLowerCase().split(' (')[0]) === 0));
+
+            if (shown.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+
+            shuffleArray(shown).slice(0, 2).forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'surprise-item';
                 div.innerHTML = `
